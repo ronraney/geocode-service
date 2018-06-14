@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>My Geocode App</title>
+	<link rel="icon" href="favicon.ico" type="image/x-icon"/>
+	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+	<style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%; max-height: 350px; width: 75%; min-width: 350px; 
+      }
+      form {
+      	margin-bottom: 20px;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDpun5WVWqm4E7r-RUr_Iw3bi3D6t13Msw&callback"></script>
+
+</head>
+<body>
+	<div class="jumbotron">
+	  <h1 class="display-4">Geocoding With Google API</h1>
+	  <p class="lead">This is a simple geocoder app built with HTML, CSS and JavaScript</p>
+	  <hr class="my-4">
+	  <p>The user inputs a location and the app sends it to the Google Geocode API. The API returns sets of data which this app displays. In addition, the coordinates are used to display the location on a Google Map, using the Google Maps JavaScript API.</p>
+	  <a class="btn btn-primary btn-lg" href="https://developers.google.com/maps/documentation/javascript/examples/geocoding-simple" target="_blank" role="button">Learn more</a>
+	</div>
+	<div class="container">
+		<h2 id="text-center"></h2>
+		<form id="location-form">
+			<h3>Enter a location:</h3>
+			<input onFocus="this.value=''" type="text" id="location-input" class="mb-3 form-control form-control-lg">
+			<button type="submit" class="btn btn-outline-primary btn-block">Submit</button>
+		</form>
+	</div>
+	<div class="container" id="map"></div>
+	<div class="mt-5 container">
+		<h3 class="h3">Location data returned from API:</h3>
+		<div class="card-block m-3" id="formatted-address"></div>
+		<div class="card-block m-3" id="address-components"></div>
+		<div class="card-block m-3" id="coordinates"></div>
+	</div>
+	<script>
+
+		var locationForm = document.getElementById('location-form');
+		locationForm.addEventListener('submit', geocode);
+
+		//var finderForm = document.getElementById('finder-form');
+		//finderForm.addEventListener('submit', finder);
+
+		var map;
+
+		function initialize() {
+		    var mapOptions = {
+		        center: new google.maps.LatLng(38.971,-95.235),
+		        zoom: 10
+		    };
+		    map = new google.maps.Map(document.getElementById("map"),mapOptions);
+
+		    var marker = new google.maps.Marker({
+          		position: mapOptions.center,
+          		map: map,
+          		title: "Lawrence, KS"
+        	});   
+		}
+
+		function resetMap(latitude, longitude) {
+		    var mapOptions = {
+		        center: new google.maps.LatLng(latitude, longitude),
+		        zoom: 10
+		    };
+		    map = new google.maps.Map(document.getElementById("map"),mapOptions);
+		    var location = document.getElementById('location-input').value;
+		    var marker = new google.maps.Marker({
+          		position: mapOptions.center,
+          		map: map,
+          		title: location
+        	});   
+		}
+
+		google.maps.event.addDomListener(window, 'load', initialize);
+
+
+		function geocode(e){
+			e.preventDefault();
+
+			var location = document.getElementById('location-input').value;
+			axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+				params:{
+					address: location,
+					key: 'AIzaSyAyZR0ze1UlbCywpr3CExkMWIk0eKLH8oc'
+				}
+			})
+			.then(function(response) {
+				console.log(response);
+				var formattedAddress = response.data.results[0].formatted_address;
+				var formattedAddressOutput = `
+					<ul class="list-group">
+						<li class="list-group-item">${formattedAddress}</li>
+					</ul>					
+				`;
+				var addressComponents = response.data.results[0].address_components;
+				var addressComponentsOutput = '<ul class="list-group">';
+
+				for(i = 0;i < addressComponents.length;i++ ) {
+					addressComponentsOutput += `
+						<li class="list-group-item"><strong>${addressComponents[i].types[0]}</strong> ${addressComponents[i].long_name}</li>
+					`;
+				}
+				addressComponentsOutput += '</ul>';
+
+				var latitude = response.data.results[0].geometry.location.lat;
+				var longitude = response.data.results[0].geometry.location.lng;
+				var coordinatesOutput = `
+					<ul class="list-group">
+						<li class="list-group-item"><strong>Latitude: </strong>${latitude}</li>
+						<li class="list-group-item"><strong>Longitude: </strong>${longitude}</li>
+					</ul>
+				`;
+
+				document.getElementById('formatted-address').innerHTML = formattedAddressOutput;
+				document.getElementById('address-components').innerHTML = addressComponentsOutput;
+				document.getElementById('coordinates').innerHTML = coordinatesOutput;
+
+				resetMap(latitude, longitude);
+			})
+			
+
+			.catch(function(error){
+				console.log(error);
+			});
+		}
+
+	</script>
+
+</body>
+</html>
